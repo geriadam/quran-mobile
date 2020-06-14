@@ -1,10 +1,8 @@
 import React, { Component } from 'react';
 import { View, Text, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
-import { Appbar } from 'react-native-paper';
-import { Colors } from '../../styles/Colors';
+import { Divider } from 'react-native-paper'
 import styles from './styles';
-import { CardSurahList, Header } from "../../components/index";
-
+import { CardAyat, Loader, HeaderDetail } from "../../components/index";
 import { fetchingQuranDetail } from '../../actions/QuranDetailAction';
 import { connect } from 'react-redux';
 
@@ -29,15 +27,26 @@ class QuranDetail extends Component {
     }
 
     _fetchData = async () => {
-        //const { dataSurah } = this.props.navigation.state.params;
-        //await this.props.fetchingQuranDetail();
+        const { dataSurah: { id, count_ayat } } = this.props.navigation.state.params;
+        await this.props.fetchingQuranDetail(id, count_ayat);
     }
 
     navigateQuran = () => {
         this.props.navigation.navigate("QuranList");
     }
 
+    renderItem = ({ item, index }) => {
+        return (
+            <CardAyat
+                ayatNumber={item?.aya_number}
+                ayatText={item?.aya_text}
+                ayatTranslate={item?.translation_aya_text}
+            />
+        )
+    }
+
     render() {
+
         const { dataSurah } = this.props.navigation.state.params;
         const suratName = dataSurah.surat_name;
         const suratArabic = dataSurah.surat_text;
@@ -46,18 +55,25 @@ class QuranDetail extends Component {
         const title = `${suratName} (${suratArabic})`;
         const subtitle = `${suratTranslate} - ${countAyat} Ayat`;
 
-        return (
-            <View style={styles.container}>
-                <Appbar.Header style={{backgroundColor: Colors.primary}}>
-                    <Appbar.BackAction onPress={() => {this.navigateQuran()}} color={Colors.white}/>
-                    <Appbar.Content 
-                        color={Colors.white}
-                        title={title}
-                        subtitle={subtitle}
-                    />
-                </Appbar.Header>
-            </View>
-        );
+        return this.props.quranDetail.loading 
+                ? ( <Loader loading={this.props.quranDetail.loading} /> )
+                : (
+                    <View style={styles.container}>
+                        <HeaderDetail title={title} subtitle={subtitle} link={this.navigateQuran}/>
+                        <FlatList
+                            data={this.props.quranDetail.data}
+                            renderItem={this.renderItem}
+                            keyExtractor={item => `${item.aya_id}`}
+                            ItemSeparatorComponent={Divider}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={this.state.refreshing}
+                                    onRefresh={this._onRefresh}
+                                />
+                            }
+                        />
+                    </View>
+                );
     }
 }
 
