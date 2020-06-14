@@ -1,0 +1,1 @@
+export CardAyat from "./CardAyat";
